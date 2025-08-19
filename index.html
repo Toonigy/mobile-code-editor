@@ -153,49 +153,38 @@
             const rawCode = codeEditor.value;
             const fileType = codeEditor.dataset.filetype;
 
-            // Prepare the HTML content for the iframe based on file type
-            let htmlContent;
+            // The main issue is that `livePreview.contentWindow` might not be
+            // immediately ready after a `document.write` operation, leading
+            // to the "Uncaught SyntaxError". To fix this, we will use a
+            // different method to create the iframe content.
+
+            // First, create a Blob from the code content
+            let codeBlob;
             if (fileType === 'js') {
-                // For JS files, we create a basic HTML structure
-                // and then inject the raw code as the script content.
-                // This prevents a SyntaxError in the main page's script.
-                htmlContent = `<!DOCTYPE html>
+                // If it's a JS file, wrap it in a full HTML page
+                const htmlWrapper = `<!DOCTYPE html>
 <html>
 <body>
 <p style="padding: 2rem; font-family: sans-serif; text-align: center;">JavaScript content is running. Check the console for output.</p>
-<script id="user-script"></script>
+<script>
+${rawCode}
+</script>
 </body>
 </html>`;
+                codeBlob = new Blob([htmlWrapper], { type: 'text/html' });
             } else {
-                // For HTML, CSS, or other text files, the content is the same.
-                htmlContent = rawCode;
+                // Otherwise, use the raw code
+                codeBlob = new Blob([rawCode], { type: 'text/html' });
             }
 
-            // Write the content to the iframe's document
-            try {
-                livePreview.contentWindow.document.open();
-                livePreview.contentWindow.document.write(htmlContent);
-                livePreview.contentWindow.document.close();
-
-                // If it's a JS file, inject the raw code into the script tag
-                if (fileType === 'js') {
-                    const userScript = livePreview.contentWindow.document.getElementById('user-script');
-                    if (userScript) {
-                        userScript.textContent = rawCode;
-                    }
-                }
-            } catch (e) {
-                console.error('Error in preview:', e);
-                livePreview.contentWindow.document.open();
-                livePreview.contentWindow.document.write(`
-                    <div style="padding: 2rem; text-align: center; font-family: sans-serif; color: #ef4444;">
-                        <h1 style="font-size: 1.5rem; font-weight: bold;">Preview Error</h1>
-                        <p>${e.message}</p>
-                        <p>This error is likely in the uploaded file. Please check your code for missing brackets, parentheses, or quotes.</p>
-                    </div>
-                `);
-                livePreview.contentWindow.document.close();
-            }
+            // Create a URL for the Blob and set it as the iframe's source
+            const blobUrl = URL.createObjectURL(codeBlob);
+            livePreview.src = blobUrl;
+            
+            // Clean up the Blob URL when the iframe loads to prevent memory leaks
+            livePreview.onload = () => {
+                URL.revokeObjectURL(blobUrl);
+            };
         };
 
         /**
