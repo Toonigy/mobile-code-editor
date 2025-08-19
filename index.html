@@ -142,20 +142,60 @@
 </body>
 </html>`;
 
-        // Set the initial value of the editor
+        // Set the initial value of the editor and default file type
         codeEditor.value = initialCode;
+        codeEditor.dataset.filetype = 'html';
 
         /**
          * Renders the content from the editor into the iframe.
          */
         const updatePreview = () => {
-            // Get the content from the textarea
-            const code = codeEditor.value;
+            const rawCode = codeEditor.value;
+            const fileType = codeEditor.dataset.filetype;
+
+            // Prepare the HTML content for the iframe based on file type
+            let htmlContent;
+            if (fileType === 'js') {
+                // For JS files, we create a basic HTML structure
+                // and then inject the raw code as the script content.
+                // This prevents a SyntaxError in the main page's script.
+                htmlContent = `<!DOCTYPE html>
+<html>
+<body>
+<p style="padding: 2rem; font-family: sans-serif; text-align: center;">JavaScript content is running. Check the console for output.</p>
+<script id="user-script"></script>
+</body>
+</html>`;
+            } else {
+                // For HTML, CSS, or other text files, the content is the same.
+                htmlContent = rawCode;
+            }
 
             // Write the content to the iframe's document
-            livePreview.contentWindow.document.open();
-            livePreview.contentWindow.document.write(code);
-            livePreview.contentWindow.document.close();
+            try {
+                livePreview.contentWindow.document.open();
+                livePreview.contentWindow.document.write(htmlContent);
+                livePreview.contentWindow.document.close();
+
+                // If it's a JS file, inject the raw code into the script tag
+                if (fileType === 'js') {
+                    const userScript = livePreview.contentWindow.document.getElementById('user-script');
+                    if (userScript) {
+                        userScript.textContent = rawCode;
+                    }
+                }
+            } catch (e) {
+                console.error('Error in preview:', e);
+                livePreview.contentWindow.document.open();
+                livePreview.contentWindow.document.write(`
+                    <div style="padding: 2rem; text-align: center; font-family: sans-serif; color: #ef4444;">
+                        <h1 style="font-size: 1.5rem; font-weight: bold;">Preview Error</h1>
+                        <p>${e.message}</p>
+                        <p>This error is likely in the uploaded file. Please check your code for missing brackets, parentheses, or quotes.</p>
+                    </div>
+                `);
+                livePreview.contentWindow.document.close();
+            }
         };
 
         /**
@@ -168,28 +208,14 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    let fileContent = e.target.result;
-                    // Check if the uploaded file is a JavaScript file
-                    if (file.name.endsWith('.js')) {
-                        // Wrap the JS content in a script tag with a try/catch block
-                        fileContent = `<!DOCTYPE html>
-<html>
-<body>
-<p>JavaScript content is running. Check the console for output.</p>
-<script>
-try {
-    ${fileContent}
-} catch (e) {
-    document.body.innerHTML += '<p style="color:red; font-family:sans-serif; text-align:center;">' +
-        'Error in JavaScript: ' + e.message + '</p>';
-    console.error('Error in uploaded script:', e);
-}
-</script>
-</body>
-</html>`;
-                    }
-                    // Update the textarea with the file's content
+                    const fileContent = e.target.result;
+                    // Update the textarea with the raw file content
                     codeEditor.value = fileContent;
+
+                    // Store the file type on the editor element for later use
+                    const fileExtension = file.name.split('.').pop();
+                    codeEditor.dataset.filetype = fileExtension;
+                    
                     // Trigger an update to the live preview
                     updatePreview();
                 };
@@ -206,7 +232,12 @@ try {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'index.html'; // Default filename
+            
+            // Set the filename based on the current file type
+            const fileType = codeEditor.dataset.filetype;
+            const filename = fileType === 'js' ? 'script.js' : 'index.html';
+            a.download = filename;
+
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
