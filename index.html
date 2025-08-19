@@ -43,11 +43,19 @@
     <!-- Header -->
     <header class="w-full h-16 bg-gray-800 flex items-center justify-between p-4 shadow-lg">
         <h1 class="text-3xl font-bold text-gray-100">Live Code Editor</h1>
-        <!-- File Upload Button -->
-        <label for="file-upload" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200">
-            Upload File
-        </label>
-        <input type="file" id="file-upload" class="hidden" accept=".html, .css, .js, .txt">
+        <!-- File Upload and Save Buttons Container -->
+        <div class="flex items-center space-x-4">
+            <!-- File Upload Button -->
+            <label for="file-upload" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200">
+                Upload File
+            </label>
+            <input type="file" id="file-upload" class="hidden" accept=".html, .css, .js, .txt">
+            
+            <!-- Save to Device Button -->
+            <button id="save-button" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200">
+                Save to Device
+            </button>
+        </div>
     </header>
 
     <!-- Main Editor and Preview Container -->
@@ -70,6 +78,7 @@
         const codeEditor = document.getElementById('code-editor');
         const livePreview = document.getElementById('live-preview');
         const fileUpload = document.getElementById('file-upload');
+        const saveButton = document.getElementById('save-button');
 
         // Initial content for the editor
         const initialCode = `<!DOCTYPE html>
@@ -135,6 +144,22 @@
                 };
                 reader.readAsText(file);
             }
+        });
+
+        /**
+         * Saves the content of the editor as a file to the user's device.
+         */
+        saveButton.addEventListener('click', () => {
+            const code = codeEditor.value;
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html'; // Default filename
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         });
 
         // Update the preview whenever the user types or pastes content
