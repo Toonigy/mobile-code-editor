@@ -41,8 +41,13 @@
 <body class="bg-gray-900 text-white">
 
     <!-- Header -->
-    <header class="w-full h-16 bg-gray-800 flex items-center justify-center p-4 shadow-lg">
+    <header class="w-full h-16 bg-gray-800 flex items-center justify-between p-4 shadow-lg">
         <h1 class="text-3xl font-bold text-gray-100">Live Code Editor</h1>
+        <!-- File Upload Button -->
+        <label for="file-upload" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200">
+            Upload File
+        </label>
+        <input type="file" id="file-upload" class="hidden" accept=".html, .css, .js, .txt">
     </header>
 
     <!-- Main Editor and Preview Container -->
@@ -61,9 +66,10 @@
     </main>
 
     <script>
-        // Get references to the textarea and the iframe
+        // Get references to the textarea, the iframe, and the file input
         const codeEditor = document.getElementById('code-editor');
         const livePreview = document.getElementById('live-preview');
+        const fileUpload = document.getElementById('file-upload');
 
         // Initial content for the editor
         const initialCode = `<!DOCTYPE html>
@@ -111,6 +117,25 @@
             livePreview.contentWindow.document.write(code);
             livePreview.contentWindow.document.close();
         };
+
+        /**
+         * Handles the file upload event, reading the file and
+         * updating the editor's content.
+         * @param {Event} event The file input change event.
+         */
+        fileUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Update the textarea with the file's content
+                    codeEditor.value = e.target.result;
+                    // Trigger an update to the live preview
+                    updatePreview();
+                };
+                reader.readAsText(file);
+            }
+        });
 
         // Update the preview whenever the user types or pastes content
         codeEditor.addEventListener('input', updatePreview);
