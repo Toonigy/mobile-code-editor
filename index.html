@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Code Editor</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the code editor layout */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: calc(100vh - 4rem); /* Full viewport height minus header */
+        }
+        textarea {
+            resize: none;
+            outline: none;
+            border: none;
+            background-color: #1f2937; /* Dark slate-like background */
+            color: #d1d5db; /* Light gray text */
+            padding: 1rem;
+            line-height: 1.5;
+            font-family: monospace;
+            border-radius: 0.5rem;
+            overflow-y: scroll;
+            height: 100%;
+        }
+        iframe {
+            background-color: #ffffff; /* White background for preview */
+            border-radius: 0.5rem;
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <!-- Header -->
+    <header class="w-full h-16 bg-gray-800 flex items-center justify-center p-4 shadow-lg">
+        <h1 class="text-3xl font-bold text-gray-100">Live Code Editor</h1>
+    </header>
+
+    <!-- Main Editor and Preview Container -->
+    <main class="container mx-auto p-4 editor-container gap-4">
+        <!-- Editor panel -->
+        <div class="flex flex-col h-full space-y-2">
+            <h2 class="text-lg font-semibold text-gray-300">Code</h2>
+            <textarea id="code-editor" class="flex-grow rounded-lg shadow-inner" placeholder="Write your HTML, CSS, and JavaScript here."></textarea>
+        </div>
+
+        <!-- Preview panel -->
+        <div class="flex flex-col h-full space-y-2">
+            <h2 class="text-lg font-semibold text-gray-300">Live Preview</h2>
+            <iframe id="live-preview" class="flex-grow rounded-lg shadow-lg"></iframe>
+        </div>
+    </main>
+
+    <script>
+        // Get references to the textarea and the iframe
+        const codeEditor = document.getElementById('code-editor');
+        const livePreview = document.getElementById('live-preview');
+
+        // Initial content for the editor
+        const initialCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            background-color: #e2e8f0;
+            padding: 2rem;
+            color: #1f2937;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Hello World!</h1>
+        <p>This is a live preview of your code.</p>
+        <button onclick="alert('Button clicked!');">Click Me</button>
+    </div>
+</body>
+</html>`;
+
+        // Set the initial value of the editor
+        codeEditor.value = initialCode;
+
+        /**
+         * Renders the content from the editor into the iframe.
+         */
+        const updatePreview = () => {
+            // Get the content from the textarea
+            const code = codeEditor.value;
+
+            // Write the content to the iframe's document
+            livePreview.contentWindow.document.open();
+            livePreview.contentWindow.document.write(code);
+            livePreview.contentWindow.document.close();
+        };
+
+        // Update the preview whenever the user types or pastes content
+        codeEditor.addEventListener('input', updatePreview);
+
+        // Run the initial preview update when the page loads
+        document.addEventListener('DOMContentLoaded', updatePreview);
+    </script>
+
+</body>
+</html>
