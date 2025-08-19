@@ -36,6 +36,18 @@
             width: 100%;
             height: 100%;
         }
+        /* Message Box styles */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -72,6 +84,14 @@
             <iframe id="live-preview" class="flex-grow rounded-lg shadow-lg"></iframe>
         </div>
     </main>
+    
+    <!-- Custom Message Box -->
+    <div id="message-container" class="hidden">
+        <div class="message-box text-center">
+            <p id="message-text" class="text-lg font-bold text-gray-900"></p>
+            <button onclick="document.getElementById('message-container').classList.add('hidden')" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">Close</button>
+        </div>
+    </div>
 
     <script>
         // Get references to the textarea, the iframe, and the file input
@@ -79,6 +99,17 @@
         const livePreview = document.getElementById('live-preview');
         const fileUpload = document.getElementById('file-upload');
         const saveButton = document.getElementById('save-button');
+
+        /**
+         * Custom alert-style message box.
+         * @param {string} message The message to display.
+         */
+        const showMessage = (message) => {
+            const messageContainer = document.getElementById('message-container');
+            const messageText = document.getElementById('message-text');
+            messageText.innerText = message;
+            messageContainer.classList.remove('hidden');
+        };
 
         // Initial content for the editor
         const initialCode = `<!DOCTYPE html>
@@ -106,7 +137,7 @@
     <div class="card">
         <h1>Hello World!</h1>
         <p>This is a live preview of your code.</p>
-        <button onclick="alert('Button clicked!');">Click Me</button>
+        <button onclick="parent.showMessage('Button clicked!');">Click Me</button>
     </div>
 </body>
 </html>`;
@@ -140,13 +171,19 @@
                     let fileContent = e.target.result;
                     // Check if the uploaded file is a JavaScript file
                     if (file.name.endsWith('.js')) {
-                        // Wrap the JS content in a script tag to run in the preview
+                        // Wrap the JS content in a script tag with a try/catch block
                         fileContent = `<!DOCTYPE html>
 <html>
 <body>
 <p>JavaScript content is running. Check the console for output.</p>
 <script>
-${fileContent}
+try {
+    ${fileContent}
+} catch (e) {
+    document.body.innerHTML += '<p style="color:red; font-family:sans-serif; text-align:center;">' +
+        'Error in JavaScript: ' + e.message + '</p>';
+    console.error('Error in uploaded script:', e);
+}
 </script>
 </body>
 </html>`;
